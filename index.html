@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Simulador de Control Estelar: Operación Límites V5</title>
+    
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+    <style>
+        :root {
+            --space-dark: #0f172a;
+            --space-light: #1e293b;
+            --neon-blue: #38bdf8;
+            --neon-green: #4ade80;
+            --neon-pink: #f43f5e;
+            --neon-yellow: #f59e0b;
+            --text-light: #f8fafc;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        
+        body { 
+            background-color: var(--space-dark); 
+            color: var(--text-light); 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 10px;
+        }
+        
+        #game-container { 
+            width: 100%; 
+            max-width: 850px; 
+            background: var(--space-light); 
+            border: 3px solid var(--neon-blue); 
+            border-radius: 20px; 
+            padding: 20px; 
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.15); 
+            position: relative; 
+        }
+        
+        .progress-bar-container { background: #475569; border-radius: 10px; height: 12px; width: 100%; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar { background: linear-gradient(90deg, var(--neon-blue), var(--neon-green)); height: 100%; width: 0%; transition: width 0.4s; }
+        
+        .screen { display: none; text-align: center; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        h1 { color: var(--neon-blue); margin-bottom: 12px; font-size: 1.6rem; }
+        h2 { color: var(--neon-green); margin-bottom: 12px; font-size: 1.3rem; }
+        p { font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; color: #cbd5e1; }
+
+        .mission-visor { width: 100%; height: 100px; background: #0b0f19; border: 2px solid #334155; border-radius: 12px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        .visor-grid { position: absolute; width: 100%; height: 100%; background-image: linear-gradient(rgba(56,189,248,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,0.03) 1px, transparent 1px); background-size: 15px 15px; }
+
+        .training-wrapper { display: flex; flex-direction: column; gap: 15px; text-align: left; max-height: 380px; overflow-y: auto; padding-right: 8px; margin: 15px 0; border: 1px solid #334155; padding: 12px; border-radius: 10px; background: #0f172a; }
+        .training-module { background: #1e293b; border-left: 4px solid var(--neon-blue); padding: 12px; border-radius: 6px; }
+        .training-module h3 { color: var(--neon-blue); margin-bottom: 6px; font-size: 1rem; }
+        .training-explanation { font-size: 0.9rem; color: #94a3b8; line-height: 1.4; margin-bottom: 8px; }
+        
+        .countdown-alert { background: rgba(244, 63, 94, 0.15); border: 2px solid var(--neon-pink); color: var(--neon-pink); padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 15px; font-size: 0.95rem; }
+
+        .form-group { text-align: left; max-width: 100%; margin: 12px auto; display: flex; flex-direction: column; gap: 5px; }
+        input[type="text"], input[type="password"] { padding: 10px; border-radius: 8px; border: 2px solid #475569; background: #0f172a; color: white; font-size: 0.95rem; width: 100%; }
+        
+        .btn { background: #334155; color: white; border: 2px solid var(--neon-blue); padding: 10px 20px; font-size: 0.95rem; font-weight: bold; border-radius: 10px; cursor: pointer; transition: all 0.2s; margin: 5px; }
+        .btn:hover { background: var(--neon-blue); color: var(--space-dark); box-shadow: 0 0 10px var(--neon-blue); }
+        .btn-success { border-color: var(--neon-green); }
+        .btn-success:hover { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+        .btn-danger { border-color: var(--neon-pink); background: rgba(244, 63, 94, 0.2); }
+        .btn-danger:hover { background: var(--neon-pink); color: white; box-shadow: 0 0 10px var(--neon-pink); }
+        
+        .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 15px 0; }
+        .option-card { background: #1e293b; border: 2px solid #475569; border-radius: 12px; padding: 12px; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; min-height: 55px; }
+        .option-card:hover { border-color: var(--neon-blue); background: #2d3748; }
+
+        .math-display { background: #0f172a; padding: 12px; border-radius: 10px; margin: 12px 0; font-size: 1.2rem; border: 1px solid #334155; overflow-x: auto; }
+        .feedback-box { padding: 10px; border-radius: 8px; display: none; font-weight: bold; margin-top: 12px; font-size: 0.95rem; }
+        .feedback-correct { background: rgba(74, 222, 128, 0.1); border: 2px solid var(--neon-green); color: var(--neon-green); }
+        .feedback-wrong { background: rgba(244, 63, 94, 0.1); border: 2px solid var(--neon-pink); color: var(--neon-pink); }
+
+        .stats-table-wrapper { overflow-x: auto; margin: 15px 0; border-radius: 8px; border: 1px solid #334155; }
+        .stats-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; background: #0f172a; color: #cbd5e1; }
+        .stats-table th, .stats-table td { padding: 10px; border-bottom: 1px solid #334155; }
+        .stats-table th { background: #1e293b; color: var(--neon-blue); }
+
+        #auth-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.9); z-index: 1000; align-items: center; justify-content: center; padding: 15px; }
+        .auth-content { background: var(--space-light); border: 3px solid var(--neon-pink); padding: 25px; border-radius: 15px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 0 20px var(--neon-pink); }
+
+        #admin-panel { display: none; margin-top: 25px; background: #0b0f19; border: 2px dashed var(--neon-pink); padding: 15px; border-radius: 12px; text-align: left; }
+        .admin-box { background: #1e293b; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .admin-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin-top: 8px; }
+
+        @media(max-width: 480px) {
+            h1 { font-size: 1.3rem; }
+            .btn { width: 100%; margin: 5px 0; }
+            #game-container { padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div class="progress-bar-container">
+            <div id="game-progress" class="progress-bar"></div>
+        </div>
+
+        <div id="screen-register" class="screen active">
+            <div id="avatar-btn" style="font-size:3.5rem; user-select:none; cursor:pointer; display:inline-block; transition:transform 0.1s;">👨‍🚀</div>
+            <h1>Academia de Control Estelar: Operación Límites</h1>
+            <p>Introduce tu bitácora de identificación oficial para enlazar los sistemas del reactor.</p>
+            <div class="form-group">
+                <label>Nombre del Cadete (Nombre y Apellidos)</label>
+                <input type="text" id="student-name" placeholder="Ej. Juan López Pérez">
+            </div>
+            <div class="form-group">
+                <label>Rango Espacial (Grado y Grupo)</label>
+                <input type="text" id="student-range" placeholder="Ej. 3° A">
+            </div>
+            <button class="btn btn-success" onclick="validateAndGoToTraining()">Sincronizar e Ingresar ⚙️</button>
+        </div>
+
+        <div id="screen-training" class="screen">
+            <div class="countdown-alert" id="fake-timer">⚠️ ALERTA: Presurización en curso. Tiempo de abordaje: 02:45. ¡Date prisa!</div>
+            <h1>Sala de Preparación de la Flota 🛠️</h1>
+            <p>¡Atención Cadete! Analiza las directrices teóricas y los ejemplos paso a paso antes de abordar los sistemas en vivo:</p>
+            
+            <div class="training-wrapper">
+                <div class="training-module">
+                    <h3>🟢 1. Límite de una Constante</h3>
+                    <div class="training-explanation">Si el límite es de una constante (es decir, un valor numérico fijo y no una variable como $x$), el resultado es siempre la misma constante ya que no hay letras que sustituir.</div>
+                    <div class="math-display">$$\lim_{x \to -3} 12 = 12$$</div>
+                </div>
+                <div class="training-module">
+                    <h3>🟢 2. Límite de una Variable</h3>
+                    <div class="training-explanation">Cuando calculamos el límite de una variable simple, la letra se reemplaza directamente por el valor numérico al cual tiende en el radar inferior.</div>
+                    <div class="math-display">$$\lim_{x \to 7} x = 7$$</div>
+                </div>
+                <div class="training-module">
+                    <h3>🟢 3. Multiplicación de Variable por Constante</h3>
+                    <div class="training-explanation">Para resolver el límite de un número que multiplica a una variable, sustituimos el valor de la tendencia en la letra y efectuamos el producto final.</div>
+                    <div class="math-display">$$\lim_{x \to 4} (3x) = 3(4) = 12$$</div>
+                </div>
+                <div class="training-module">
+                    <h3>🟢 4. Límite de una Suma</h3>
+                    <div class="training-explanation">El límite de una suma se resuelve evaluando el valor de la tendencia de la variable en la expresión y sumándole el término independiente.</div>
+                    <div class="math-display">$$\lim_{x \to 5} (x + 10) = 5 + 10 = 15$$</div>
+                </div>
+                <div class="training-module">
+                    <h3>🟢 5. Límite de una Resta</h3>
+                    <div class="training-explanation">De igual forma, se evalúa la variable multiplicándola por su coeficiente correspondiente y restándole el valor numérico indicado.</div>
+                    <div class="math-display">$$\lim_{x \to 2} (4x - 3) = 4(2) - 3 = 8 - 3 = 5$$</div>
+                </div>
+                <div class="training-module">
+                    <h3>🟢 6. Límite de una Potencia</h3>
+                    <div class="training-explanation">Sustituimos el valor numérico de la tendencia dentro de la variable de la base y elevamos dicho número al exponente indicado.</div>
+                    <div class="math-display">$$\lim_{x \to 3} (x^2) = 3^2 = 9$$</div>
+                </div>
+                <div class="training-module">
+                    <h3>🟢 7. Límite de una Raíz (Radical Normal)</h3>
+                    <div class="training-explanation">Evaluamos primero las operaciones internas debajo de la casita del radical y, al número resultante, le calculamos su raíz cuadrada exacta.</div>
+                    <div class="math-display">$$\lim_{x \to 4} \sqrt{x + 5} = \sqrt{4 + 5} = \sqrt{9} = 3$$</div>
+                </div>
+                <div class="training-module">
+                    <h3>🟢 8. Límite Racional Normal</h3>
+                    <div class="training-explanation">En una fracción estándar donde el denominador no se vuelve cero, sustituimos el valor en el numerador y denominador de forma independiente para obtener el cociente.</div>
+                    <div class="math-display">$$\lim_{x \to 2} \frac{x + 4}{x + 1} = \frac{2 + 4}{2 + 1} = \frac{6}{3} = 2$$</div>
+                </div>
+                <div class="training-module">
+                    <h3>🔴 9. Indeterminación por Factorización</h3>
+                    <div class="training-explanation">¡Alerta! Si al evaluar te da $\frac{0}{0}$, el sistema colapsa. Debes descomponer el numerador en binomios conjugados (diferencia de cuadrados) para cancelar el término indeterminado.</div>
+                    <div class="math-display">$$\lim_{x \to 3} \frac{x^2 - 9}{x - 3} = \frac{(x-3)(x+3)}{x-3} = x + 3 \implies 3 + 3 = 6$$</div>
+                </div>
+                <div class="training-module">
+                    <h3>🔴 10. Racionalización de Radicales</h3>
+                    <div class="training-explanation">Si la expresión tiene raíces y produce una indeterminación $\frac{0}{0}$, multiplicamos arriba y abajo por el conjugado del radical para eliminar la indeterminación de la consola.</div>
+                    <div class="math-display">$$\lim_{x \to 4} \frac{\sqrt{x} - 2}{x - 4} \cdot \frac{\sqrt{x} + 2}{\sqrt{x} + 2} = \frac{x - 4}{(x-4)(\sqrt{x}+2)} = \frac{1}{\sqrt{x}+2} \implies \frac{1}{\sqrt{4}+2} = \frac{1}{4}$$</div>
+                </div>
+            </div>
+            
+            <button class="btn btn-success" onclick="startExam()">🚀 ¡CORRER A LOS REACTORES EN VIVO!</button>
+        </div>
+
+        <div id="screen-game" class="screen">
+            <div style="display:flex; justify-content:space-between; background:#0f172a; padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.85rem;">
+                <span id="display-cadet" style="color:var(--neon-blue);"></span>
+                <span id="display-energy" style="color:var(--neon-green); font-weight:bold;">Eficiencia: 100%</span>
+            </div>
+
+            <div class="mission-visor">
+                <div class="visor-grid"></div>
+                <svg id="visor-graphic" width="100%" height="100%" style="position:relative; z-index:1;"></svg>
+            </div>
+
+            <h2 id="mission-title"></h2>
+            <p id="mission-desc"></p>
+            <div id="math-arena" class="math-display"></div>
+            <div style="text-align: right;"><button class="btn" style="border-color:var(--neon-yellow); color:var(--neon-yellow); font-size:0.8rem; padding:6px 12px;" onclick="useHint()">Solicitar Soporte (Pista)</button></div>
+            <div id="options-container" class="options-grid"></div>
+            <div id="feedback" class="feedback-box"></div>
+            <div style="margin-top: 15px;"><button id="btn-next" class="btn btn-success" style="display:none;" onclick="nextQuestion()">Avanzar Sistema ➡️</button></div>
+        </div>
+
+        <div id="screen-results" class="screen">
+            <h1 id="final-title">Evaluación Finalizada</h1>
+            <p id="final-desc"></p>
+            
+            <div class="stats-table-wrapper">
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Reactor Misión</th>
+                            <th>Estado de Estabilización</th>
+                            <th>Eficiencia</th>
+                            <th>Uso de Pistas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-tbody"></tbody>
+                </table>
+            </div>
+
+            <canvas id="medalCanvas" width="500" height="240" style="border:2px solid #334155; border-radius:12px; background:#1e293b; max-width:100%; margin:15px auto; display:block;"></canvas>
+            <div>
+                <button class="btn btn-success" onclick="downloadMedal()">Descargar Medalla 💾</button>
+                <button class="btn" onclick="location.reload()">Cerrar Bitácora 🔄</button>
+            </div>
+        </div>
+
+        <div id="admin-panel">
+            <h3 style="color:var(--neon-pink); margin-bottom:5px;">🛠️ Configuración de la Misión (Comandante en Jefe)</h3>
+            <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px;">Modifica las fórmulas y sus respuestas. Recuerda sincronizar las opciones manuales correspondientes.</p>
+            
+            <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid var(--neon-pink); padding: 10px; border-radius: 8px; margin-bottom: 15px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <span style="font-size:0.85rem; color:var(--text-light);">¿Liberar re-intentos de alumnos en este equipo?</span>
+                <button class="btn btn-danger" style="font-size:0.8rem; padding:6px 12px; margin:0;" onclick="clearStudentDatabase()">Limpiar Registro de Bloqueos 🧹</button>
+            </div>
+
+            <div style="max-height: 250px; overflow-y: auto; padding-right:5px; margin-bottom:15px;">
+                <div id="admin-questions-list"></div>
+            </div>
+            <button class="btn btn-success" onclick="saveAdminChanges()">Guardar Ajustes de Flota 💾</button>
+        </div>
+    </div>
+
+    <div id="auth-modal">
+        <div class="auth-content">
+            <h3 style="color:var(--neon-pink); margin-bottom:10px;">🔒 Acceso de Comandante</h3>
+            <p style="font-size:0.85rem; margin-bottom:12px;">Ingresa tus credenciales para acceder a la configuración de la misión.</p>
+            <div class="form-group">
+                <input type="text" id="auth-user" placeholder="Usuario">
+            </div>
+            <div class="form-group">
+                <input type="password" id="auth-pass" placeholder="Password">
+            </div>
+            <div style="margin-top:15px;">
+                <button class="btn btn-success" onclick="verifyCommanderAuth()">Autenticar</button>
+                <button class="btn" onclick="closeAuthModal()">Abortar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            if (type === 'success') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'alarm') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'hint') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(580, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            }
+        }
+
+        // BASE DE DATOS DE LOS 10 REACTORES COMPLETOS
+        let questions = [
+            { title: "Reactor 1: Constante", desc: "Sistemas estables sin variables dinámicas detectadas.", formula: "\\lim_{x \\to -3} 12", correct: "12", options: ["12", "-3", "9", "0"], hint: "El límite de una constante siempre devuelve el mismo valor numérico.", type: "star" },
+            { title: "Reactor 2: Variable", desc: "Sustitución directa en el sensor de identidad.", formula: "\\lim_{x \\to 7} x", correct: "7", options: ["0", "1", "7", "14"], hint: "Cambia directamente la variable x por el número al cual tiende.", type: "planet" },
+            { title: "Reactor 3: Multiplicación Constante", desc: "Calibra el coeficiente dinámico del reactor externo.", formula: "\\lim_{x \\to 4} (3x)", correct: "12", options: ["7", "12", "34", "1"], hint: "Multiplica el valor del coeficiente por la tendencia directa.", type: "star" },
+            { title: "Reactor 4: Sensor de Suma", desc: "Suma los flujos energéticos del núcleo distribuido.", formula: "\\lim_{x \\to 5} (x + 10)", correct: "15", options: ["5", "10", "15", "50"], hint: "Reemplaza x por el número y realiza la adición aritmética.", type: "planet" },
+            { title: "Reactor 5: Sensor de Resta", desc: "Evalúa la sustracción en la línea de combustible.", formula: "\\lim_{x \\to 2} (4x - 3)", correct: "5", options: ["5", "1", "8", "0"], hint: "Resuelve el producto de x primero y luego resta el término constante.", type: "star" },
+            { title: "Reactor 6: Potenciación Base", desc: "Eleva el rendimiento al exponente modular indicado.", formula: "\\lim_{x \\to 3} (x^2)", correct: "9", options: ["6", "9", "3", "27"], hint: "Desarrolla el exponente multiplicando la tendencia por sí misma.", type: "shield" },
+            { title: "Reactor 7: Raíz de Flujo", desc: "Extrae el valor armónico bajo el radical cuántico.", formula: "\\lim_{x \\to 4} \\sqrt{x + 5}", correct: "3", options: ["2", "3", "9", "4"], hint: "Suma los valores dentro del radical y obtén la raíz cuadrada exacta.", type: "shield" },
+            { title: "Reactor 8: Racional Continuo", desc: "Determina el cociente de fluidos balanceados.", formula: "\\lim_{x \\to 2} \\frac{x + 4}{x + 1}", correct: "2", options: ["6", "2", "3", "4"], hint: "Sustituye arriba y abajo de la línea fraccionaria y simplifica.", type: "planet" },
+            { title: "Reactor 9: Indeterminación por Factorización", desc: "¡Alerta 0/0! Usa binomios conjugados para evitar la explosión.", formula: "\\lim_{x \\to 3} \\frac{x^2 - 9}{x - 3}", correct: "6", options: ["0", "3", "6", "9"], hint: "Cancela el factor común (x-3) arriba y abajo. Te restará evaluar (x+3).", type: "danger" },
+            { title: "Reactor 10: Racionalización de Raíces", desc: "¡Alerta 0/0 con radicales! Multiplica por el conjugado del escudo.", formula: "\\lim_{x \\to 4} \\frac{\\sqrt{x} - 2}{x - 4}", correct: "1/4", options: ["0", "1/4", "1/2", "4"], hint: "Aplica diferencia de cuadrados arriba. Se simplificará a la expresión 1 / (sqrt(x) + 2).", type: "danger" }
+        ];
+
+        let currentIndex = 0; let currentEnergy = 100; let studentName = ""; let studentRange = "";
+        let adminPressTimer; let userStats = [];
+
+        // Inicializador del botón astronauta táctil
+        const avatarBtn = document.getElementById('avatar-btn');
+        avatarBtn.addEventListener('mousedown', startPress);
+        avatarBtn.addEventListener('touchstart', startPress);
+        avatarBtn.addEventListener('mouseup', cancelPress);
+        avatarBtn.addEventListener('mouseleave', cancelPress);
+        avatarBtn.addEventListener('touchend', cancelPress);
+
+        function startPress(e) {
+            e.preventDefault(); this.style.transform = "scale(0.9)";
+            adminPressTimer = setTimeout(() => { this.style.transform = "scale(1)"; openAuthModal(); }, 3000);
+        }
+        function cancelPress() { clearTimeout(adminPressTimer); this.style.transform = "scale(1)"; }
+
+        function openAuthModal() { document.getElementById('auth-modal').style.display = 'flex'; }
+        function closeAuthModal() { document.getElementById('auth-modal').style.display = 'none'; }
+
+        function verifyCommanderAuth() {
+            const u = document.getElementById('auth-user').value.trim();
+            const p = document.getElementById('auth-pass').value.trim();
+            if (u === "JALC" && p === "Lopez2313") { closeAuthModal(); toggleAdminPanel(); } else { alert("❌ Acceso Denegado."); }
+        }
+
+        function toggleAdminPanel() {
+            const panel = document.getElementById('admin-panel');
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+            if (panel.style.display === 'block') {
+                const container = document.getElementById('admin-questions-list'); container.innerHTML = '';
+                questions.forEach((q, idx) => {
+                    container.innerHTML += `
+                        <div class="admin-box">
+                            <div style="font-weight:bold; color:var(--neon-green); margin-bottom:4px;">${q.title}</div>
+                            <div class="math-display" style="padding:6px; font-size:1.05rem;">$$\\text{Vista Real Actual: } ${q.formula}$$</div>
+                            <div class="admin-inputs">
+                                <input type="text" id="adm-form-${idx}" value="${q.formula}" placeholder="Fórmula LaTeX">
+                                <input type="text" id="adm-corr-${idx}" value="${q.correct}" placeholder="Respuesta Correcta">
+                                <input type="text" id="adm-opt-${idx}" value="${q.options.join(',')}" placeholder="Opciones (Sep. por comas)">
+                            </div>
+                        </div>`;
+                });
+                if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+            }
+        }
+
+        function saveAdminChanges() {
+            questions.forEach((q, idx) => {
+                q.formula = document.getElementById(`adm-form-${idx}`).value;
+                q.correct = document.getElementById(`adm-corr-${idx}`).value.trim();
+                q.options = document.getElementById(`adm-opt-${idx}`).value.split(',');
+            });
+            alert("🔒 Parametros actualizados con éxito.");
+            document.getElementById('admin-panel').style.display = 'none';
+        }
+
+        // SISTEMA DE ESCANEO DE BLOQUEO DE ALUMNOS (localStorage)
+        function validateAndGoToTraining() {
+            studentName = document.getElementById('student-name').value.trim().toUpperCase();
+            studentRange = document.getElementById('student-range').value.trim();
+            
+            if (!studentName || !studentRange) { alert("Introduce tus datos oficiales cadete."); return; }
+            
+            // Comprobar si el nombre ya completó el examen previamente
+            const historicalData = localStorage.getItem(`ST_DATABASE_${studentName}`);
+            if (historicalData) {
+                playSound('alarm');
+                alert(`🚫 ACCESO DENEGADO, CADETE.\n\nEl sistema central detectó que "${studentName}" ya ejecutó esta simulación obteniendo un ${historicalData} de eficiencia.\n\nNo se permiten re-intentos de misión.`);
+                return;
+            }
+            
+            switchScreen('screen-training');
+        }
+
+        function startExam() {
+            document.getElementById('display-cadet').innerText = `Cadete: ${studentName} | Rango: ${studentRange}`;
+            switchScreen('screen-game'); loadQuestion();
+        }
+
+        function drawMissionGraphic(type, color) {
+            const svg = document.getElementById('visor-graphic'); svg.innerHTML = '';
+            if (type === 'danger') {
+                svg.innerHTML = `<circle cx="50%" cy="50%" r="22" fill="none" stroke="${color}" stroke-width="3" stroke-dasharray="5 4"/><circle cx="50%" cy="50%" r="8" fill="${color}"/>`;
+            } else if (type === 'planet') {
+                svg.innerHTML = `<ellipse cx="50%" cy="50%" rx="35" ry="8" fill="none" stroke="${color}" stroke-width="2"/><circle cx="50%" cy="50%" r="18" fill="#1e293b" stroke="${color}" stroke-width="2.5"/>`;
+            } else {
+                svg.innerHTML = `<circle cx="45%" cy="45%" r="3" fill="${color}"/><circle cx="55%" cy="55%" r="3" fill="${color}"/><line x1="45%" y1="45%" x2="55%" y2="55%" stroke="${color}" opacity="0.3"/>`;
+            }
+        }
+
+        function loadQuestion() {
+            currentEnergy = 100; currentQuestionHintUsed = false; totalAttemptsThisQuestion = 0;
+            document.getElementById('display-energy').innerText = `Eficiencia: 100%`;
+            document.getElementById('display-energy').style.color = 'var(--neon-green)';
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('btn-next').style.display = 'none';
+
+            const q = questions[currentIndex];
+            document.getElementById('mission-title').innerText = `${q.title} (${currentIndex+1}/10)`;
+            document.getElementById('mission-desc').innerText = q.desc;
+            document.getElementById('math-arena').innerHTML = `$$${q.formula}$$`;
+
+            drawMissionGraphic(q.type, '#38bdf8');
+
+            const optContainer = document.getElementById('options-container'); optContainer.innerHTML = '';
+            q.options.forEach(opt => {
+                const card = document.createElement('div'); card.className = 'option-card';
+                card.innerHTML = opt.includes('/') || opt.includes('\\') ? `$$${opt}$$` : opt;
+                card.onclick = () => checkAnswer(opt, q.correct);
+                optContainer.appendChild(card);
+            });
+
+            document.getElementById('game-progress').style.width = ((currentIndex / questions.length) * 100) + '%';
+            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+        }
+
+        let currentQuestionHintUsed = false; let totalAttemptsThisQuestion = 0;
+        function useHint() {
+            currentEnergy = 60; currentQuestionHintUsed = true; playSound('hint');
+            document.getElementById('display-energy').innerText = `Eficiencia: 60%`;
+            document.getElementById('display-energy').style.color = 'var(--neon-yellow)';
+            drawMissionGraphic(questions[currentIndex].type, '#f59e0b');
+            alert(`💡 SOPORTE EN LÍNEA: ${questions[currentIndex].hint}`);
+        }
+
+        function checkAnswer(selected, correct) {
+            const fb = document.getElementById('feedback'); totalAttemptsThisQuestion++;
+            if (selected.trim() === correct.trim()) {
+                playSound('success');
+                fb.className = "feedback-box feedback-correct";
+                fb.innerText = `✨ ¡Excelente! Sistema estabilizado con una eficiencia del ${currentEnergy}%.`;
+                fb.style.display = 'block';
+                
+                userStats.push({
+                    name: questions[currentIndex].title,
+                    status: totalAttemptsThisQuestion === 1 ? "Éxito Directo 🟢" : "Ajustado 🟡",
+                    efficiency: `${currentEnergy}%`,
+                    hint: currentQuestionHintUsed ? "Sí 💡" : "No ❌"
+                });
+
+                drawMissionGraphic(questions[currentIndex].type, '#4ade80');
+                document.getElementById('btn-next').style.display = 'inline-block';
+            } else {
+                playSound('alarm'); currentEnergy = 60;
+                document.getElementById('display-energy').innerText = `Eficiencia: 60%`;
+                document.getElementById('display-energy').style.color = 'var(--neon-pink)';
+                drawMissionGraphic(questions[currentIndex].type, '#f43f5e');
+                fb.className = "feedback-box feedback-wrong";
+                fb.innerText = "❌ Frecuencia errónea en la línea analítica. Re-evalúa.";
+                fb.style.display = 'block';
+            }
+        }
+
+        function nextQuestion() {
+            currentIndex++; if (currentIndex < questions.length) { loadQuestion(); } else { endTest(); }
+        }
+
+        function endTest() {
+            document.getElementById('game-progress').style.width = '100%'; switchScreen('screen-results');
+            const tbody = document.getElementById('stats-tbody'); tbody.innerHTML = "";
+            let efficiencySum = 0;
+            
+            userStats.forEach(stat => {
+                efficiencySum += parseInt(stat.efficiency);
+                tbody.innerHTML += `<tr><td style="color:var(--neon-blue); font-weight:bold;">${stat.name}</td><td>${stat.status}</td><td>${stat.efficiency}</td><td>${stat.hint}</td></tr>`;
+            });
+
+            let finalAvg = Math.round(efficiencySum / questions.length);
+            document.getElementById('final-desc').innerText = `Certificado de Bitácora expedido para el Cadete ${studentName} (${studentRange}). Eficiencia global de estabilización planetaria: ${finalAvg}%.`;
+            
+            // INSCRIPCIÓN DEL ALUMNO EN EL CANDADO DE SEGURIDAD INTERNO
+            localStorage.setItem(`ST_DATABASE_${studentName}`, `${finalAvg}%`);
+
+            const canvas = document.getElementById('medalCanvas'); const ctx = canvas.getContext('2d');
+            ctx.fillStyle = "#0f172a"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = finalAvg >= 80 ? "#fbbf24" : "#cbd5e1"; ctx.lineWidth = 4; ctx.strokeRect(10, 10, canvas.width-20, canvas.height-20);
+            ctx.fillStyle = "#38bdf8"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText("ACADEMIA DE NAVEGACIÓN ESTELAR", canvas.width/2, 40);
+            ctx.fillStyle = "#f8fafc"; ctx.font = "14px sans-serif"; ctx.fillText(`Cadete: ${studentName}`, canvas.width/2, 95);
+            ctx.fillStyle = "#4ade80"; ctx.font = "bold 22px sans-serif"; ctx.fillText(`${finalAvg}% Eficiencia Total`, canvas.width/2, 150);
+        }
+
+        function downloadMedal() {
+            const canvas = document.getElementById('medalCanvas'); const link = document.createElement('a');
+            link.download = `Reporte_Mision_Limites.png`; link.href = canvas.toDataURL(); link.click();
+        }
+
+        function clearStudentDatabase() {
+            // Busca las llaves del localStorage que pertenezcan al simulador y las borra
+            Object.keys(localStorage).forEach(key => {
+                if(key.startsWith("ST_DATABASE_")) {
+                    localStorage.removeItem(key);
+                }
+            });
+            alert("🧹 Base de datos local purgada. Todos los alumnos de este equipo pueden volver a realizar la misión.");
+        }
+
+        function switchScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+    </script>
+</body>
+</html>
