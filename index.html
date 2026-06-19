@@ -306,7 +306,7 @@
             { title: "Reactor 7: Raíz de Flujo", desc: "Extrae el valor armónico bajo el radical cuántico.", formula: "\\lim_{x \\to 4} \\sqrt{x + 5}", correct: "3", options: ["2", "3", "9", "4"], hint: "Suma los valores dentro del radical y obtén la raíz cuadrada exacta.", type: "shield" },
             { title: "Reactor 8: Racional Continuo", desc: "Determina el cociente de fluidos balanceados.", formula: "\\lim_{x \\to 2} \\frac{x + 4}{x + 1}", correct: "2", options: ["6", "2", "3", "4"], hint: "Sustituye arriba y abajo de la línea fraccionaria y simplifica.", type: "planet" },
             { title: "Reactor 9: Indeterminación por Factorización", desc: "¡Alerta 0/0! Usa binomios conjugados para evitar la explosión.", formula: "\\lim_{x \\to 3} \\frac{x^2 - 9}{x - 3}", correct: "6", options: ["0", "3", "6", "9"], hint: "Cancela el factor común (x-3) arriba y abajo. Te restará evaluar (x+3).", type: "danger" },
-            { title: "Reactor 10: Racionalización de Raíces", desc: "¡Alerta 0/0 con radicales! Multiplica por el conjugado del escudo.", formula: "\\lim_{x \\to 4} \\frac{\\sqrt{x} - 2}{x - 4}", correct: "1/4", options: ["0", "1/4", "1/2", "4"], hint: "Aplica diferencia de cuadrados arriba. Se simplificará a la expresión 1 / (sqrt(x) + 2).", type: "danger" }
+            { title: "Reactor 10: Racionalización de Raíces", desc: "¡Alerta 0/0 con radicales! Multiplica por el conjugado del escudo.", formula: "\\lim_{x \\to 4} \\frac{\\sqrt{x} - 2}{x - 4}", correct: "1/4", options: ["0", "1/4", "1/2", "4"], hint: "Aplica diferencia de cuadrados arriba. Se simplificará a la expression 1 / (sqrt(x) + 2).", type: "danger" }
         ];
 
         let currentIndex = 0; let currentEnergy = 100; let studentName = ""; let studentRange = "";
@@ -504,13 +504,12 @@
             });
 
             let finalAvg = Math.round(efficiencySum / questions.length);
-            const scoreStr = `${finalAvg}%`;
-            
+            let scoreStr = finalAvg + "%";
             document.getElementById('final-desc').innerText = `Certificado de Bitácora expedido para el Cadete ${studentName} (${studentRange}). Eficiencia global de estabilización planetaria: ${scoreStr}.`;
             
             localStorage.setItem(`ST_DATABASE_${studentName}`, scoreStr);
 
-            // Se ejecutan los envíos automatizados aquí al terminar
+            // EJECUCIÓN DEL ENVÍO INVISIBLE EN SEGUNDO PLANO
             sendToGoogleForms(studentName, studentRange, scoreStr);
 
             const canvas = document.getElementById('medalCanvas'); const ctx = canvas.getContext('2d');
@@ -533,7 +532,7 @@
                     localStorage.removeItem(key);
                 }
             });
-            alert("🧹 Base de datos local purgada. Todos los alumnos de este equipo pueden volver a realizar la misión.");
+            alert("Courtney: 🧹 Base de datos local purgada. Todos los alumnos de este equipo pueden volver a realizar la misión.");
         }
 
         function switchScreen(id) {
