@@ -215,6 +215,10 @@
             <h1 id="final-title">Evaluación Finalizada</h1>
             <p id="final-desc"></p>
             
+            <div id="forms-alert" style="background: rgba(74, 222, 128, 0.15); border: 2px solid var(--neon-green); color: var(--neon-green); padding: 12px; border-radius: 10px; font-weight: bold; margin-bottom: 15px; font-size: 0.95rem; display:none;">
+                ✅ SÍNCRONIZACIÓN EXITOSA: Los datos de esta bitácora se han enviado al servidor central de calificaciones.
+            </div>
+
             <div class="stats-table-wrapper">
                 <table class="stats-table">
                     <thead>
@@ -269,8 +273,13 @@
         </div>
     </div>
 
+    <div style="display:none;">
+        <iframe name="hidden_iframe" id="hidden_iframe" onload="if(typeof formSubmitted !== 'undefined' && formSubmitted) showFormSuccessAlert();"></iframe>
+    </div>
+
     <script>
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let formSubmitted = false;
         
         function playSound(type) {
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
@@ -289,7 +298,6 @@
             }
         }
 
-        // BASE DE DATOS DE LOS 10 REACTORES COMPLETOS
         let questions = [
             { title: "Reactor 1: Constante", desc: "Sistemas estables sin variables dinámicas detectadas.", formula: "\\lim_{x \\to -3} 12", correct: "12", options: ["12", "-3", "9", "0"], hint: "El límite de una constante siempre devuelve el mismo valor numérico.", type: "star" },
             { title: "Reactor 2: Variable", desc: "Sustitución directa en el sensor de identidad.", formula: "\\lim_{x \\to 7} x", correct: "7", options: ["0", "1", "7", "14"], hint: "Cambia directamente la variable x por el número al cual tiende.", type: "planet" },
@@ -306,7 +314,6 @@
         let currentIndex = 0; let currentEnergy = 100; let studentName = ""; let studentRange = "";
         let adminPressTimer; let userStats = [];
 
-        // Inicializador del botón astronauta táctil
         const avatarBtn = document.getElementById('avatar-btn');
         avatarBtn.addEventListener('mousedown', startPress);
         avatarBtn.addEventListener('touchstart', startPress);
@@ -356,18 +363,16 @@
                 q.correct = document.getElementById(`adm-corr-${idx}`).value.trim();
                 q.options = document.getElementById(`adm-opt-${idx}`).value.split(',');
             });
-            alert("🔒 Parametros actualizados con éxito.");
+            alert("🔒 Parámetros actualizados con éxito.");
             document.getElementById('admin-panel').style.display = 'none';
         }
 
-        // SISTEMA DE ESCANEO DE BLOQUEO DE ALUMNOS (localStorage)
         function validateAndGoToTraining() {
             studentName = document.getElementById('student-name').value.trim().toUpperCase();
             studentRange = document.getElementById('student-range').value.trim();
             
             if (!studentName || !studentRange) { alert("Introduce tus datos oficiales cadete."); return; }
             
-            // Comprobar si el nombre ya completó el examen previamente
             const historicalData = localStorage.getItem(`ST_DATABASE_${studentName}`);
             if (historicalData) {
                 playSound('alarm');
@@ -461,6 +466,44 @@
             currentIndex++; if (currentIndex < questions.length) { loadQuestion(); } else { endTest(); }
         }
 
+        // CONEXIÓN INTEGRADA DIRECTA A TU GOOGLE FORMS
+        function sendToGoogleForms(name, range, efficiency) {
+            formSubmitted = true;
+            const formActionURL = "https://docs.google.com/forms/d/e/1FAIpQLSd4ia8cNDs1qNM4c1Ai27IFU-o8Jhqvp6koLgkj5i-cLP4Otw/formResponse"; 
+            
+            const nameEntry = "entry.1993015312";   
+            const rangeEntry = "entry.1186080405";  
+            const effEntry = "entry.985720740";    
+
+            const tempForm = document.createElement('form');
+            tempForm.action = formActionURL;
+            tempForm.method = 'POST';
+            tempForm.target = 'hidden_iframe';
+
+            const inputName = document.createElement('input');
+            inputName.name = nameEntry;
+            inputName.value = name;
+            tempForm.appendChild(inputName);
+
+            const inputRange = document.createElement('input');
+            inputRange.name = rangeEntry;
+            inputRange.value = range;
+            tempForm.appendChild(inputRange);
+
+            const inputEff = document.createElement('input');
+            inputEff.name = effEntry;
+            inputEff.value = efficiency;
+            tempForm.appendChild(inputEff);
+
+            document.body.appendChild(tempForm);
+            tempForm.submit();
+            document.body.removeChild(tempForm);
+        }
+
+        function showFormSuccessAlert() {
+            document.getElementById('forms-alert').style.display = 'block';
+        }
+
         function endTest() {
             document.getElementById('game-progress').style.width = '100%'; switchScreen('screen-results');
             const tbody = document.getElementById('stats-tbody'); tbody.innerHTML = "";
@@ -472,10 +515,14 @@
             });
 
             let finalAvg = Math.round(efficiencySum / questions.length);
-            document.getElementById('final-desc').innerText = `Certificado de Bitácora expedido para el Cadete ${studentName} (${studentRange}). Eficiencia global de estabilización planetaria: ${finalAvg}%.`;
+            const finalAvgString = `${finalAvg}%`;
             
-            // INSCRIPCIÓN DEL ALUMNO EN EL CANDADO DE SEGURIDAD INTERNO
-            localStorage.setItem(`ST_DATABASE_${studentName}`, `${finalAvg}%`);
+            document.getElementById('final-desc').innerText = `Certificado de Bitácora expedido para el Cadete ${studentName} (${studentRange}). Eficiencia global de estabilización planetaria: ${finalAvgString}.`;
+            
+            localStorage.setItem(`ST_DATABASE_${studentName}`, finalAvgString);
+
+            // LLAMADO AL ENVÍO AUTOMÁTICO
+            sendToGoogleForms(studentName, studentRange, finalAvgString);
 
             const canvas = document.getElementById('medalCanvas'); const ctx = canvas.getContext('2d');
             ctx.fillStyle = "#0f172a"; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -483,7 +530,7 @@
             ctx.fillStyle = "#38bdf8"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
             ctx.fillText("ACADEMIA DE NAVEGACIÓN ESTELAR", canvas.width/2, 40);
             ctx.fillStyle = "#f8fafc"; ctx.font = "14px sans-serif"; ctx.fillText(`Cadete: ${studentName}`, canvas.width/2, 95);
-            ctx.fillStyle = "#4ade80"; ctx.font = "bold 22px sans-serif"; ctx.fillText(`${finalAvg}% Eficiencia Total`, canvas.width/2, 150);
+            ctx.fillStyle = "#4ade80"; ctx.font = "bold 22px sans-serif"; ctx.fillText(`${finalAvgString} Eficiencia Total`, canvas.width/2, 150);
         }
 
         function downloadMedal() {
@@ -492,7 +539,6 @@
         }
 
         function clearStudentDatabase() {
-            // Busca las llaves del localStorage que pertenezcan al simulador y las borra
             Object.keys(localStorage).forEach(key => {
                 if(key.startsWith("ST_DATABASE_")) {
                     localStorage.removeItem(key);
